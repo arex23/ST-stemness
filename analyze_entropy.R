@@ -3,7 +3,9 @@ library(ggplot2)
 library(patchwork)
 
 source("shannon_entropy.R")
+source("entropy_correlation.R")
 
+# checks data folder to find the sample folders to run the analysis on multiple
 samples <- list.dirs("data", full.names = FALSE, recursive = FALSE)
 samples <- samples[samples != ""]
 
@@ -11,8 +13,12 @@ if (length(samples) == 0) {
   stop("No samples found in data folder")
 }
 
+# function for the analysis of one sample, to be applied to all the folders
 analyze_sample <- function(sample_name) {
   print(paste("Analyzing sample:", sample_name))
+  
+  # save path of the raw_data folder and then check if "spatial" folder exists
+  # if it exists it becomes the data directory
   
   path1 <- file.path("data", sample_name, "raw_data")
   path2 <- file.path("data", sample_name)
@@ -20,6 +26,9 @@ analyze_sample <- function(sample_name) {
   data_dir <- NULL
   if (dir.exists(path1) && dir.exists(file.path(path1, "spatial"))) {
     data_dir <- path1
+    
+    # questo elif è un po' inutile perchè controlla se c'è spatial fuori da raw
+    # data che non dovrebbe succedere infatti valuterò di cavarlo
   } else if (dir.exists(path2) && dir.exists(file.path(path2, "spatial"))) {
     data_dir <- path2
   }
@@ -29,8 +38,10 @@ analyze_sample <- function(sample_name) {
     return(NULL)
   }
   
+  # find the h5 file which contains all the reads
   h5_file <- list.files(path = data_dir, pattern = "\\.h5$", full.names = FALSE)[1]
   
+  # load it with Seurat
   spatial_obj <- Load10X_Spatial(
     data.dir = data_dir,
     filename = h5_file,
@@ -38,30 +49,30 @@ analyze_sample <- function(sample_name) {
     filter.matrix = TRUE
   )
   
+  # calculate entropy per spot (RAW)
   spatial_obj <- calculate_shannon_entropy(spatial_obj, assay = "Spatial", layer = "counts")
-  spatial_obj$normalized_entropy <- spatial_obj$shannon_entropy / log2(spatial_obj$nFeature_Spatial)
   
+  # various plot settings
   theme_entropy <- theme(
     plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
     legend.title = element_text(size = 12),
     legend.text = element_text(size = 10)
   )
   
-  p_norm <- SpatialFeaturePlot(spatial_obj, features = "normalized_entropy") +
-    scale_fill_viridis_c(option = "magma", name = "Normalized\nEntropy") +
-    ggtitle(paste("Spatial Distribution of Normalized Shannon Entropy -", sample_name)) +
-    theme_entropy
-  
   p_raw <- SpatialFeaturePlot(spatial_obj, features = "shannon_entropy") +
     scale_fill_viridis_c(option = "magma", name = "Shannon\nEntropy") +
     ggtitle(paste("Spatial Distribution of Shannon Entropy -", sample_name)) +
     theme_entropy
-  
-  dir.create("results", showWarnings = FALSE)
-  ggsave(file.path("results", paste0(sample_name, "_spatial_normalized_entropy_plot.png")), plot = p_norm, width = 8, height = 7, dpi = 300)
   ggsave(file.path("results", paste0(sample_name, "_spatial_entropy_plot.png")), plot = p_raw, width = 8, height = 7, dpi = 300)
+  
+  # entropy correlation function to see if there is correlation between counts 
+  # or features and entropy
+  
+  corr_res <- calculate_entropy_correlations(spatial_obj, sample_name = sample_name, output_dir = "results")
+  return(invisible(corr_res))
 }
 
+# no idea di tutto sto blocco ma penso sia per applicare l'analisi a più sample
 args <- commandArgs(trailingOnly = TRUE)
 run_samples <- c()
 
