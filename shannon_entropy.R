@@ -1,4 +1,4 @@
-calculate_shannon_entropy <- function(seurat_obj, assay = NULL, layer = "counts") {
+calculate_shannon_entropy <- function(seurat_obj, assay = NULL, layer = "data") {
   
   if (is.null(assay)) assay <- Seurat::DefaultAssay(seurat_obj)
   
@@ -11,9 +11,13 @@ calculate_shannon_entropy <- function(seurat_obj, assay = NULL, layer = "counts"
   
   if (inherits(expr_mat, "dgCMatrix")) {
     counts_per_cell <- diff(expr_mat@p)
-    p <- expr_mat@x / rep(col_sums, counts_per_cell)
+    denom <- rep(col_sums, counts_per_cell)
+    valid_idx <- (denom > 0) & (expr_mat@x > 0)
+    
+    p <- expr_mat@x[valid_idx] / denom[valid_idx]
     entropy_components <- -(p * log2(p))
-    col_indices <- rep(seq_len(ncol(expr_mat)), counts_per_cell)
+    col_indices <- rep(seq_len(ncol(expr_mat)), counts_per_cell)[valid_idx]
+    
     cell_entropies <- tapply(entropy_components, col_indices, sum)
     
     full_entropy <- numeric(ncol(expr_mat))

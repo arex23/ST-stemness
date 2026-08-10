@@ -6,7 +6,7 @@ calculate_entropy_correlations <- function(seurat_obj,
                                             count_col = NULL,
                                             feature_col = NULL,
                                             sample_name = "Sample",
-                                            output_dir = "results",
+                                            output_dir = file.path("results", "statistical_tests"),
                                             save_outputs = TRUE) {
   
   meta <- seurat_obj@meta.data
