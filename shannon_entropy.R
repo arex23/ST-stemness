@@ -1,8 +1,8 @@
 calculate_shannon_entropy <- function(seurat_obj, assay = NULL, layer = "data") {
   if (is.null(assay)) assay <- Seurat::DefaultAssay(seurat_obj)
-  
+
   expr_mat <- Seurat::GetAssayData(seurat_obj, assay = assay, layer = layer)
-  if (is.null(expr_mat) || nrow(expr_mat) == 0 || ncol(expr_mat) == 0) {
+  if (is.null(expr_mat) || nrow(expr_mat) == 0) {
     stop(sprintf("No data found in assay '%s', layer '%s'.", assay, layer))
   }
 
@@ -31,4 +31,3 @@ calculate_shannon_entropy <- function(seurat_obj, assay = NULL, layer = "data") 
 
   Seurat::AddMetaData(seurat_obj, metadata = full_entropy, col.name = "shannon_entropy")
 }
-

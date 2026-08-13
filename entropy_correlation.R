@@ -2,7 +2,7 @@ library(ggplot2)
 library(patchwork)
 
 calculate_entropy_correlations <- function(seurat_obj,
-                                            entropy_cols = NULL,
+                                            entropy_cols = "shannon_entropy",
                                             count_col = NULL,
                                             feature_col = NULL,
                                             sample_name = "Sample",
@@ -11,15 +11,8 @@ calculate_entropy_correlations <- function(seurat_obj,
 
   meta <- seurat_obj@meta.data
 
-  if (is.null(count_col)) {
-    count_col <- grep("^nCount", colnames(meta), value = TRUE)[1]
-  }
-  if (is.null(feature_col)) {
-    feature_col <- grep("^nFeature", colnames(meta), value = TRUE)[1]
-  }
-  if (is.null(entropy_cols)) {
-    entropy_cols <- "shannon_entropy"
-  }
+  if (is.null(count_col)) count_col <- grep("^nCount", colnames(meta), value = TRUE)[1]
+  if (is.null(feature_col)) feature_col <- grep("^nFeature", colnames(meta), value = TRUE)[1]
 
   sample_prefix <- if (!is.null(sample_name) && nchar(sample_name) > 0) sample_name else "Sample"
 
