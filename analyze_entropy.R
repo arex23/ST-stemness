@@ -20,6 +20,10 @@ apply_spanorm_normalization <- function(seurat_obj, sample_p = 0.1, chunk_size =
   if (length(common_spots) > 0) {
     counts_mat <- counts_mat[, common_spots, drop = FALSE]
     coords_mat <- coords_mat[common_spots, , drop = FALSE]
+    
+    # CRITICAL FIX: Subset the actual Seurat object here so metadata and all downstream 
+    # steps (entropy, visualization, DE analysis) operate on this exact consistent spot set.
+    seurat_obj <- subset(seurat_obj, cells = common_spots)
   }
 
   cat("Fitting SpaNorm model...\n")
